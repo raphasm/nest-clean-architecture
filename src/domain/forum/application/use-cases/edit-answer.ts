@@ -1,12 +1,13 @@
-import { Either, left, right } from '@/core/either'
-import { Answer } from '../../enterprise/entities/answer'
+import { Answer } from '@/domain/forum/enterprise/entities/answer'
 import { IAnswersRepository } from '../repositories/answers-repository'
+import { Either, left, right } from '@/core/either'
 import { ResourceNotFoundError } from '@/core/errors/errors/resource-not-found-error'
 import { NotAllowedError } from '@/core/errors/errors/not-allowed-error'
 import { AnswerAttachmentList } from '../../enterprise/entities/answer-attachment-list'
-import { IAnswerAttachmentsRepository } from '../repositories/answer-attachments-repository'
-import { AnswerAttachment } from '../../enterprise/entities/answer-attachment'
 import { UniqueEntityID } from '@/core/entities/unique-entity-id'
+import { IAnswerAttachmentsRepository } from '@/domain/forum/application/repositories/answer-attachments-repository'
+import { AnswerAttachment } from '../../enterprise/entities/answer-attachment'
+import { Injectable } from '@nestjs/common'
 
 interface IEditAnswerUseCaseRequest {
   authorId: string
@@ -22,9 +23,10 @@ type IEditAnswerUseCaseResponse = Either<
   }
 >
 
+@Injectable()
 export class EditAnswerUseCase {
   constructor(
-    private answerRepository: IAnswersRepository,
+    private answersRepository: IAnswersRepository,
     private answerAttachmentsRepository: IAnswerAttachmentsRepository,
   ) {}
 
@@ -34,7 +36,7 @@ export class EditAnswerUseCase {
     content,
     attachmentsIds,
   }: IEditAnswerUseCaseRequest): Promise<IEditAnswerUseCaseResponse> {
-    const answer = await this.answerRepository.findById(answerId)
+    const answer = await this.answersRepository.findById(answerId)
 
     if (!answer) {
       return left(new ResourceNotFoundError())
@@ -63,7 +65,7 @@ export class EditAnswerUseCase {
     answer.attachments = answerAttachmentList
     answer.content = content
 
-    await this.answerRepository.save(answer)
+    await this.answersRepository.save(answer)
 
     return right({
       answer,
