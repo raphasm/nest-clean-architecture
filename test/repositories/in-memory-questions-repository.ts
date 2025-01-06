@@ -8,7 +8,7 @@ export class InMemoryQuestionsRepository implements IQuestionsRepository {
   public items: Question[] = []
 
   constructor(
-    private questionAttachmentRepository: IQuestionAttachmentsRepository,
+    private questionAttachmentsRepository: IQuestionAttachmentsRepository,
   ) {}
 
   async findById(id: string) {
@@ -42,6 +42,10 @@ export class InMemoryQuestionsRepository implements IQuestionsRepository {
   async create(question: Question) {
     this.items.push(question)
 
+    await this.questionAttachmentsRepository.createMany(
+      question.attachments.getItems(),
+    )
+
     DomainEvents.dispatchEventsForAggregate(question.id)
   }
 
@@ -49,6 +53,14 @@ export class InMemoryQuestionsRepository implements IQuestionsRepository {
     const itemIndex = this.items.findIndex((item) => item.id === question.id)
 
     this.items[itemIndex] = question
+
+    await this.questionAttachmentsRepository.createMany(
+      question.attachments.getNewItems(),
+    )
+
+    await this.questionAttachmentsRepository.deleteMany(
+      question.attachments.getRemovedItems(),
+    )
 
     DomainEvents.dispatchEventsForAggregate(question.id)
   }
@@ -58,7 +70,7 @@ export class InMemoryQuestionsRepository implements IQuestionsRepository {
 
     this.items.splice(itemIndex, 1)
 
-    this.questionAttachmentRepository.deleteManyByQuestionId(
+    this.questionAttachmentsRepository.deleteManyByQuestionId(
       question.id.toString(),
     )
   }
